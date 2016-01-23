@@ -5,7 +5,9 @@
 This module contains the representation of a stop.
 """
 
-from ruter.api import ReisAPI
+
+import ruter.api
+
 from ruter.departure import Departure
 from ruter.line import Line
 from ruter.location import Location
@@ -13,7 +15,6 @@ from ruter.location import Location
 
 class Stop(object):
     def __init__(self, json_source):
-        self.__api = ReisAPI()
         self.__district = json_source["District"]
         self.__id = json_source["ID"];
         self.__location = Location(json_source["X"], json_source["Y"])
@@ -76,8 +77,8 @@ class Stop(object):
         return Line.from_stop_id(stop_id=self.__id)
 
     @classmethod
-    def from_id(stop_id):
+    def from_id(cls, stop_id):
         """
         Return information about a stop given its ID.
         """
-        return Stop(ReisAPI().get_stop(stop_id=stop_id))
+        return Stop(ruter.api.get_stop(stop_id=stop_id))

@@ -1,7 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from ruter.api import ReisAPI
+"""
+This module contains the representation of a line.
+"""
+
+import ruter.api
 
 
 class Line(object):
@@ -40,11 +44,11 @@ class Line(object):
         return self.__transport
 
     @classmethod
-    def from_stop_id(stop_id):
+    def from_stop_id(cls, stop_id):
         """
         Return the lines related to the stop.
         """
-        return Line.__from_json(ReisAPI().get_lines_by_stop_id(stop_id))
+        return self.__from_json(ruter.api.get_lines_by_stop_id(stop_id))
 
     @staticmethod
     def __from_json(json_source):

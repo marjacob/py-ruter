@@ -1,7 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from ruter.api import ReisAPI
+"""
+This module contains the representation of a departure.
+"""
+
+import ruter.api
 
 
 class Departure(object):
@@ -50,15 +54,15 @@ class Departure(object):
         return self.__stop_id
 
     @classmethod
-    def from_stop_id(stop_id, time=None):
+    def from_stop_id(cls, stop_id, time=None):
         """
         Return departures from a stop.
         """
-        json_source = ReisAPI().get_departures(stop_id, time)
-        return Departure.__from_json(json_source)
+        json_source = ruter.api.get_departures(stop_id, time)
+        return cls.__list_from_json(json_source)
 
     @staticmethod
-    def __from_json(json_source):
+    def __list_from_json(json_source):
         """
         Return a list of departures given a list of JSON entries.
         """

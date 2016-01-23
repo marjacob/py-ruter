@@ -1,6 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+"""
+This module contains the representation of a UTM33 location.
+"""
+
 class Location(object):
     def __init__(self, x, y):
         self.__x = x
