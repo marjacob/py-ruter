@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 """
@@ -15,6 +14,7 @@ from pytz import timezone
 
 
 RUTER_API_ENDPOINT = "https://reisapi.ruter.no"
+RUTER_API_TIMEZONE = "Europe/Oslo"
 
 
 class TransportType(Enum):
@@ -31,12 +31,37 @@ class TransportType(Enum):
     walking = 0
 
 
-def get_favourites(favourites):
+def get_favorites(*args):
     """
-    No description available from the official documentation.
+    An application can store information about the user’s favourite departures
+    from a Stop, filtered by Line and Destination. The FavouriteRequest is
+    concatenated as such: Stopid1-lineid1-destinationtext1,stopid2-lineid2-
+    destinationtext2 etc. Example: MonitoredStopVisits are returned, grouped
+    by the three parametres.
     """
+    if not len(args) > 0:
+        return None
+    favorites = []
+    for arg in args:
+        favorite = []
+        # Origin (Stop ID)
+        try:
+            favorite.append(arg[0].id)
+        except AttributeError:
+            favorite.append(arg[0])
+        # Line
+        try:
+            favorite.append(arg[1].id)
+        except AttributeError:
+            favorite.append(arg[1])
+        # Destination
+        try:
+            favorite.append(arg[2].name)
+        except AttributeError:
+            favorite.append(arg[2])
+        favorites.append("-".join(map(str, favorite)))
     uri = "{0}/Favourites/GetFavourites".format(RUTER_API_ENDPOINT)
-    params = {"favouritesRequest": favourites}
+    params = {"favouritesRequest": ",".join(favorites)}
     return __process_response(requests.get(uri, params=params))
 
 
@@ -227,7 +252,7 @@ def get_travels(origin, destin, time=None, is_after=True, **kwargs):
     uri = "{0}/Travel/GetTravels".format(RUTER_API_ENDPOINT)
 
     if not time:
-        time = __get_oslo_time()
+        time = datetime.now(timezone(RUTER_API_TIMEZONE))
 
     # Minutes needed for interchange.
     # Max....: 99
@@ -283,18 +308,11 @@ def get_trip(trip_id, time=None):
     uri = "{0}/Trip/GetTrip/{1}".format(RUTER_API_ENDPOINT, trip_id)
 
     if not time:
-        time = __get_oslo_time()
+        time = datetime.now(timezone(RUTER_API_TIMEZONE))
 
     params = {"time": time.strftime("%d%m%Y%H%M%S")}
 
     return __process_response(requests.get(uri, params=params))
-
-
-def __get_oslo_time():
-    """
-    Return the current time in Oslo, Norway.
-    """
-    return datetime.now(timezone("Europe/Oslo"))
 
 
 def __process_response(response):

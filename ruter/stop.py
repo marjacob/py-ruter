@@ -5,8 +5,6 @@
 This module contains the representation of a stop.
 """
 
-import re
-
 from requests.exceptions import HTTPError
 from ruter import api
 from ruter.departure import Departure
@@ -82,7 +80,7 @@ class Stop(object):
         """
         Return information about a stop given its ID.
         """
-        return Stop(ruter.api.get_stop(stop_id=stop_id))
+        return Stop(api.get_stop(stop_id=stop_id))
 
     @classmethod
     def from_short_name(cls, short_name):
@@ -91,7 +89,11 @@ class Stop(object):
         """
         json_source = api.get_stops_ruter()
         if len(json_source) > 0:
-            reobj = re.compile("^{0}$".format(short_name), re.IGNORECASE)
-            return next(Stop(item) for item in json_source
-                        if reobj.match(item["ShortName"]))
+            short_name = short_name.upper()
+            try:
+                return next(Stop(item)
+                            for item in json_source
+                            if item["ShortName"].upper() == short_name)
+            except StopIteration:
+                pass
         return None
