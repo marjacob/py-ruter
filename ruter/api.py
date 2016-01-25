@@ -14,55 +14,7 @@ from enum import Enum
 from pytz import timezone
 
 
-_endpoint = "https://reisapi.ruter.no"
-
-# Minutes needed for interchange.
-# Max....: 99
-_change_margin = 2
-
-# Minutes punishment for an interchange.
-# Higher values prioritize journeys without interchange.
-# Max....: 199
-_change_punish = 8
-
-# Maximum number of proposals returned by the API.
-# Min....: 1
-# Max....: 40
-_max_proposals = 8
-
-# Maximum minutes a person should walk to a stop.
-# Max....: N/A (undocumented)
-_max_walking_minutes = 10
-
-# Walking speed in percent of default (which is 70 m/min).
-# Max....: 999
-_walking_factor = 100
-
-
-def _enforce_range(lower_bound, upper_bound, value):
-    """
-    Truncate a value to fit within a lower and upper bound.
-    """
-    if value < lower_bound:
-        return lower_bound
-    elif value > upper_bound:
-        return upper_bound
-    return value
-
-
-def _get_oslo_time():
-    """
-    Return the current time in Oslo, Norway.
-    """
-    return datetime.now(timezone("Europe/Oslo"))
-
-
-def _process_response(response):
-    """
-    Parse JSON and raise errors when appropriate.
-    """
-    response.raise_for_status()
-    return json.loads(response.text)
+RUTER_API_ENDPOINT = "https://reisapi.ruter.no"
 
 
 class TransportType(Enum):
@@ -79,100 +31,106 @@ class TransportType(Enum):
     walking = 0
 
 
-# Favourites
-
 def get_favourites(favourites):
     """
     No description available from the official documentation.
     """
-    uri = "{0}/Favourites/GetFavourites".format(_endpoint)
+    uri = "{0}/Favourites/GetFavourites".format(RUTER_API_ENDPOINT)
     params = {"favouritesRequest": favourites}
-    return _process_response(requests.get(uri, params=params))
+    return __process_response(requests.get(uri, params=params))
 
-# Heartbeat
 
 def ping():
     """
     Return a boolean value indicating whether the service is
     available.
     """
-    uri = "{0}/Heartbeat/Index".format(_endpoint)
+    uri = "{0}/Heartbeat/Index".format(RUTER_API_ENDPOINT)
     response = requests.get(uri)
     response.raise_for_status()
     return response.text == "\"Pong\""
 
-# Line
 
 def get_data_by_line_id(line_id):
     """
     Return data about a Line.
     """
-    uri = "{base}/Line/GetDataByLineID/{line_id}" \
-        .format(base=_endpoint, line_id=line_id)
-    return _process_response(requests.get(uri))
+    uri = "{0}/Line/GetDataByLineID/{1}".format(RUTER_API_ENDPOINT, line_id)
+    return __process_response(requests.get(uri))
+
 
 def get_lines():
     """
     Return a List of all Lines available.
     """
-    uri = "{0}/Line/GetLines".format(_endpoint)
-    return _process_response(requests.get(uri))
+    uri = "{0}/Line/GetLines".format(RUTER_API_ENDPOINT)
+    return __process_response(requests.get(uri))
+
 
 def get_lines_by_stop_id(stop_id):
     """
     Return a List of all Lines that serve a Stop.
     """
-    uri = "{base}/Line/GetLinesByStopID/{stop_id}" \
-        .format(base=_endpoint, stop_id=stop_id)
-    return _process_response(requests.get(uri))
+    uri = "{0}/Line/GetLinesByStopID/{1}".format(RUTER_API_ENDPOINT, stop_id)
+    return __process_response(requests.get(uri))
+
 
 def get_lines_ruter():
     """
     Return a list of lines that Ruter operates.
     """
-    uri = "{0}/Line/GetLinesRuter".format(_endpoint)
-    return _process_response(requests.get(uri))
+    uri = "{0}/Line/GetLinesRuter".format(RUTER_API_ENDPOINT)
+    return __process_response(requests.get(uri))
+
 
 def get_lines_ruter_extended():
     """
     Return a list of lines that Ruter operates, including stops
     for each line.
     """
-    uri = "{0}/Line/GetLinesRuterExtended".format(_endpoint)
-    return _process_response(requests.get(uri))
+    uri = "{0}/Line/GetLinesRuterExtended".format(RUTER_API_ENDPOINT)
+    return __process_response(requests.get(uri))
+
 
 def get_stops_by_line_id(line_id):
     """
     Return a List of all Stops that are served by a Line.
     """
-    uri = "{base}/Line/GetStopsByLineId/{line_id}" \
-        .format(base=_endpoint, line_id=line_id)
-    return _process_response(requests.get(uri))
+    uri = "{0}/Line/GetStopsByLineId/{1}".format(RUTER_API_ENDPOINT, line_id)
+    return __process_response(requests.get(uri))
 
-# Meta
 
 def get_validities():
     """
     Return the date and time for the first and last valid search
     time.
     """
-    uri = "{base}/Meta/GetValidities".format(base=_endpoint)
-    return _process_response(requests.get(uri))
+    uri = "{0}/Meta/GetValidities".format(RUTER_API_ENDPOINT)
+    return __process_response(requests.get(uri))
 
-# Place
 
-def get_closest_stops(latitude, longtitude, max_distance=1400):
+def get_closest_stops(latitude, longtitude, **kwargs):
     """
     Return a list of stops and their real walking distance to the
     point indicated by the latitude and longtitude.
     """
-    uri = "{base}/Place/GetClosestStops".format(base=_endpoint)
+    uri = "{0}/Place/GetClosestStops".format(RUTER_API_ENDPOINT)
     coordinates = "(X={0},Y={1})".format(latitude, longtitude)
+
+    max_proposals = 25 # range(1, 40)
+    if "max_proposals" in kwargs:
+        max_proposals = min(max(1, kwargs["max_proposals"]), 40)
+
+    max_distance = 1400
+    if "max_distance" in kwargs:
+        max_distance = max(0, kwargs["max_distance"])
+
     params = {"coordinates": coordinates,
-              "proposals": _max_proposals,
+              "proposals": max_proposals,
               "maxdistance": max_distance}
 
-    return _process_response(requests.get(uri, params=params))
+    return __process_response(requests.get(uri, params=params))
+
 
 def get_places(search, county=None):
     """
@@ -180,63 +138,65 @@ def get_places(search, county=None):
     string. If a county is provided, search results are sorted
     according to geographical proximity.
     """
-    uri = "{0}/Place/GetPlaces/{1}".format(_endpoint, search)
+    uri = "{0}/Place/GetPlaces/{1}".format(RUTER_API_ENDPOINT, search)
     params = {}
 
     if county:
         params["counties"] = county
 
-    return _process_response(requests.get(uri, params=params))
+    return __process_response(requests.get(uri, params=params))
+
 
 def get_sale_points_by_area(longmin, longmax, latmin, latmax):
     """
     Returns a list of sale points within a box defined by the UTM33
     coordinates.
     """
-    uri = "{0}/Place/GetSalePointsByArea".format(_endpoint)
+    uri = "{0}/Place/GetSalePointsByArea".format(RUTER_API_ENDPOINT)
     params = {"longmin": longmin,
               "longmax": longmax,
               "latmin": latmin,
               "latmax": latmax}
 
-    return _process_response(requests.get(uri, params=params))
+    return __process_response(requests.get(uri, params=params))
+
 
 def get_stop(stop_id):
     """
     Return all data about a stop.
     """
-    uri = "{0}/Place/GetStop/{1}".format(_endpoint, stop_id)
-    return _process_response(requests.get(uri))
+    uri = "{0}/Place/GetStop/{1}".format(RUTER_API_ENDPOINT, stop_id)
+    return __process_response(requests.get(uri))
+
 
 def get_stops_by_area(xmin, ymin, xmax, ymax, stop_points=False):
     """
     Return a list of stops within a box defined by the UTM33
     coordinates.
     """
-    uri = "{base}/Place/GetStopsByArea".format(base=_endpoint)
+    uri = "{0}/Place/GetStopsByArea".format(RUTER_API_ENDPOINT)
     params = {"xmin": xmin,
               "xmax": xmax,
               "ymin": ymin,
               "ymax": ymax,
               "includeStopPoints": stop_points}
 
-    return _process_response(requests.get(uri, params=params))
+    return __process_response(requests.get(uri, params=params))
+
 
 def get_stops_ruter():
     """
     Return a list of stops within the Ruter zones.
     """
-    uri = "{0}/Place/GetStopsRuter".format(_endpoint)
-    return _process_response(requests.get(uri))
+    uri = "{0}/Place/GetStopsRuter".format(RUTER_API_ENDPOINT)
+    return __process_response(requests.get(uri))
 
-# StopVisit
 
 def get_departures(stop_id, transport=None, lines=None, time=None):
     """
     Return a list of departures from a stop.
     """
-    uri = "{base}/StopVisit/GetDepartures/{stop_id}" \
-        .format(base=_endpoint, stop_id=stop_id)
+    uri = "{0}/StopVisit/GetDepartures/{1}".format(RUTER_API_ENDPOINT, stop_id)
     params = {}
 
     if time:
@@ -248,56 +208,98 @@ def get_departures(stop_id, transport=None, lines=None, time=None):
     if lines:
         params["linenames"] = lines
 
-    return _process_response(requests.get(uri, params=params))
+    return __process_response(requests.get(uri, params=params))
 
-# Street
 
 def get_street(street_id):
     """
     Return all houses of a street with their coordinates.
     """
-    uri = "{base}/Street/GetStreet/{street_id}" \
-        .format(base=_endpoint, street_id=street_id)
+    uri = "{0}/Street/GetStreet/{1}".format(RUTER_API_ENDPOINT, street_id)
 
-    return _process_response(requests.get(uri))
+    return __process_response(requests.get(uri))
 
-# Travel
 
-def get_travels(origin, destin, time=None, is_after=True):
+def get_travels(origin, destin, time=None, is_after=True, **kwargs):
     """
     Return possible journeys between two places.
     """
-    uri = "{base}/Travel/GetTravels".format(base=_endpoint)
+    uri = "{0}/Travel/GetTravels".format(RUTER_API_ENDPOINT)
 
     if not time:
-        time = _get_oslo_time()
+        time = __get_oslo_time()
+
+    # Minutes needed for interchange.
+    # Max....: 99
+    change_margin = 2
+    if "change_margin" in kwargs:
+        change_margin = min(max(1, kwargs["change_margin"]), 99)
+
+    # Minutes punishment for an interchange.
+    # Higher values prioritize journeys without interchange.
+    # Max....: 199
+    change_punish = 8
+    if "change_punish" in kwargs:
+        change_punish = min(max(1, kwargs["change_punish"]), 199)
+
+    # Maximum number of proposals returned by the API.
+    # Min....: 1
+    # Max....: 40
+    max_proposals = 8
+    if "max_proposals" in kwargs:
+        max_proposals = min(max(1, kwargs["max_proposals"]), 40)
+
+    # Maximum minutes a person should walk to a stop.
+    # Max....: N/A (undocumented)
+    max_walking_minutes = 10
+    if "max_walking_minutes" in kwargs:
+        max_walking_minutes = max(0, kwargs["max_walking_minutes"])
+
+    # Walking speed in percent of default (which is 70 m/min).
+    # Max....: 999
+    walking_factor = 100
+    if "walking_factor" in kwargs:
+        walking_factor = min(max(1, kwargs["walking_factor"]), 199)
 
     params = {"fromPlace": origin,
               "toPlace": destin,
               "isafter": is_after,
               "time": time.strftime("%d%m%Y%H%M%S"),
-              "changemargin": _change_margin,
-              "changepunish": _change_punish,
-              "walkingfactor": _walking_factor,
-              "proposals": _max_proposals,
+              "changemargin": change_margin,
+              "changepunish": change_punish,
+              "walkingfactor": walking_factor,
+              "proposals": max_proposals,
               "transporttypes": "",
-              "maxwalkingminutes": _max_walking_minutes,
+              "maxwalkingminutes": max_walking_minutes,
               "linenames": ""}
 
-    return _process_response(requests.get(uri, params=params))
+    return __process_response(requests.get(uri, params=params))
 
-# Trip
 
 def get_trip(trip_id, time=None):
     """
     Return a sequence of all stops served by a trip.
     """
-    uri = "{base}/Trip/GetTrip/{trip_id}" \
-        .format(base=_endpoint, trip_id=trip_id)
+    uri = "{0}/Trip/GetTrip/{1}".format(RUTER_API_ENDPOINT, trip_id)
 
     if not time:
-        time = _get_oslo_time()
+        time = __get_oslo_time()
 
     params = {"time": time.strftime("%d%m%Y%H%M%S")}
 
-    return _process_response(requests.get(uri, params=params))
+    return __process_response(requests.get(uri, params=params))
+
+
+def __get_oslo_time():
+    """
+    Return the current time in Oslo, Norway.
+    """
+    return datetime.now(timezone("Europe/Oslo"))
+
+
+def __process_response(response):
+    """
+    Parse JSON and raise errors when appropriate.
+    """
+    response.raise_for_status()
+    return json.loads(response.text)

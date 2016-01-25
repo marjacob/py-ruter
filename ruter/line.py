@@ -5,7 +5,7 @@
 This module contains the representation of a line.
 """
 
-import ruter.api
+from ruter import api
 
 
 class Line(object):
@@ -48,7 +48,7 @@ class Line(object):
         """
         Return the lines related to the stop.
         """
-        return self.__from_json(ruter.api.get_lines_by_stop_id(stop_id))
+        return self.__from_json(api.get_lines_by_stop_id(stop_id))
 
     @staticmethod
     def __from_json(json_source):

@@ -5,9 +5,10 @@
 This module contains the representation of a stop.
 """
 
+import re
 
-import ruter.api
-
+from requests.exceptions import HTTPError
+from ruter import api
 from ruter.departure import Departure
 from ruter.line import Line
 from ruter.location import Location
@@ -16,7 +17,7 @@ from ruter.location import Location
 class Stop(object):
     def __init__(self, json_source):
         self.__district = json_source["District"]
-        self.__id = json_source["ID"];
+        self.__id = json_source["ID"]
         self.__location = Location(json_source["X"], json_source["Y"])
         self.__name = json_source["Name"]
         self.__short_name = json_source["ShortName"]
@@ -62,7 +63,7 @@ class Stop(object):
         """
         Get the zone in which the stop is located.
         """
-        return self._zone
+        return self.__zone
 
     def get_departures(self, time=None):
         """
@@ -82,3 +83,19 @@ class Stop(object):
         Return information about a stop given its ID.
         """
         return Stop(ruter.api.get_stop(stop_id=stop_id))
+
+    @classmethod
+    def from_short_name(cls, short_name):
+        """
+        Return information about a stop given its unique short name.
+        """
+        json_source = api.get_stops_ruter()
+        if len(json_source) > 0:
+            reobj = re.compile("^{0}$".format(short_name), re.IGNORECASE)
+            return next(Stop(item) for item in json_source
+                        if reobj.match(item["ShortName"]))
+        return None
+
+
+
+

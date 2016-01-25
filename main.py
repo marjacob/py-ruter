@@ -1,17 +1,21 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from ruter.api import ReisAPI
+import ruter
 
 
 def main():
-    api = ReisAPI()
-    departures = api.get_departures(3010930)
+    rosenholm = ruter.Stop.from_id(3010930)
+    national = ruter.Stop.from_short_name("roh")
+    departures = national.get_departures()
+    print("{name} in zone {zone} with ID {id}".format(
+          name=national.name,
+          zone=national.zone,
+          id=national.id))
     for departure in departures:
-        journey = departure["MonitoredVehicleJourney"]
         print("{line}: {destination}".format(
-            line=journey["PublishedLineName"],
-            destination=journey["DestinationName"]))
+            line=departure.line_id,
+            destination=departure.destination))
 
 if __name__ == "__main__":
     main()

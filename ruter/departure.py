@@ -5,7 +5,7 @@
 This module contains the representation of a departure.
 """
 
-import ruter.api
+from ruter import api
 
 
 class Departure(object):
@@ -58,7 +58,7 @@ class Departure(object):
         """
         Return departures from a stop.
         """
-        json_source = ruter.api.get_departures(stop_id, time)
+        json_source = api.get_departures(stop_id, time)
         return cls.__list_from_json(json_source)
 
     @staticmethod
