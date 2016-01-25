@@ -95,7 +95,3 @@ class Stop(object):
             return next(Stop(item) for item in json_source
                         if reobj.match(item["ShortName"]))
         return None
-
-
-
-
