@@ -31,7 +31,7 @@ class TransportType(Enum):
     walking = 0
 
 
-def get_favorites(*args):
+def get_favourites(*args):
     """
     An application can store information about the user’s favourite departures
     from a Stop, filtered by Line and Destination. The FavouriteRequest is
@@ -41,39 +41,37 @@ def get_favorites(*args):
     """
     if not len(args) > 0:
         return None
-    favorites = []
+    favourites = []
     for arg in args:
-        favorite = []
+        favourite = []
         # Origin (Stop ID)
         try:
-            favorite.append(arg[0].id)
+            favourite.append(arg[0].id)
         except AttributeError:
-            favorite.append(arg[0])
+            favourite.append(arg[0])
         # Line
         try:
-            favorite.append(arg[1].id)
+            favourite.append(arg[1].id)
         except AttributeError:
-            favorite.append(arg[1])
+            favourite.append(arg[1])
         # Destination
         try:
-            favorite.append(arg[2].name)
+            favourite.append(arg[2].name)
         except AttributeError:
-            favorite.append(arg[2])
-        favorites.append("-".join(map(str, favorite)))
+            favourite.append(arg[2])
+        favourites.append("-".join(map(str, favourite)))
     uri = "{0}/Favourites/GetFavourites".format(RUTER_API_ENDPOINT)
-    params = {"favouritesRequest": ",".join(favorites)}
+    params = {"favouritesRequest": ",".join(favourites)}
     return __process_response(requests.get(uri, params=params))
 
 
-def ping():
+def index():
     """
     Return a boolean value indicating whether the service is
     available.
     """
     uri = "{0}/Heartbeat/Index".format(RUTER_API_ENDPOINT)
-    response = requests.get(uri)
-    response.raise_for_status()
-    return response.text == "\"Pong\""
+    return __process_response(requests.get(uri))
 
 
 def get_data_by_line_id(line_id):
@@ -142,7 +140,7 @@ def get_closest_stops(latitude, longtitude, **kwargs):
     uri = "{0}/Place/GetClosestStops".format(RUTER_API_ENDPOINT)
     coordinates = "(X={0},Y={1})".format(latitude, longtitude)
 
-    max_proposals = 25 # range(1, 40)
+    max_proposals = 25  # range(1, 40)
     if "max_proposals" in kwargs:
         max_proposals = min(max(1, kwargs["max_proposals"]), 40)
 
@@ -251,52 +249,35 @@ def get_travels(origin, destin, time=None, is_after=True, **kwargs):
     """
     uri = "{0}/Travel/GetTravels".format(RUTER_API_ENDPOINT)
 
-    if not time:
+    if not hasattr(time, "strftime"):
         time = datetime.now(timezone(RUTER_API_TIMEZONE))
-
-    # Minutes needed for interchange.
-    # Max....: 99
-    change_margin = 2
-    if "change_margin" in kwargs:
-        change_margin = min(max(1, kwargs["change_margin"]), 99)
-
-    # Minutes punishment for an interchange.
-    # Higher values prioritize journeys without interchange.
-    # Max....: 199
-    change_punish = 8
-    if "change_punish" in kwargs:
-        change_punish = min(max(1, kwargs["change_punish"]), 199)
-
-    # Maximum number of proposals returned by the API.
-    # Min....: 1
-    # Max....: 40
-    max_proposals = 8
-    if "max_proposals" in kwargs:
-        max_proposals = min(max(1, kwargs["max_proposals"]), 40)
-
-    # Maximum minutes a person should walk to a stop.
-    # Max....: N/A (undocumented)
-    max_walking_minutes = 10
-    if "max_walking_minutes" in kwargs:
-        max_walking_minutes = max(0, kwargs["max_walking_minutes"])
-
-    # Walking speed in percent of default (which is 70 m/min).
-    # Max....: 999
-    walking_factor = 100
-    if "walking_factor" in kwargs:
-        walking_factor = min(max(1, kwargs["walking_factor"]), 199)
 
     params = {"fromPlace": origin,
               "toPlace": destin,
               "isafter": is_after,
-              "time": time.strftime("%d%m%Y%H%M%S"),
-              "changemargin": change_margin,
-              "changepunish": change_punish,
-              "walkingfactor": walking_factor,
-              "proposals": max_proposals,
-              "transporttypes": "",
-              "maxwalkingminutes": max_walking_minutes,
-              "linenames": ""}
+              "time": time.strftime("%d%m%Y%H%M%S")}
+
+    if "change_margin" in kwargs:
+        params["changemargin"] = \
+            min(max(1, kwargs["change_margin"]), 99)
+    if "change_punish" in kwargs:
+        params["changepunish"] = \
+            min(max(1, kwargs["change_punish"]), 199)
+    if "line_names" in kwargs:
+        params["linenames"] = \
+            ",".join(map(str, kwargs["line_names"]))
+    if "max_proposals" in kwargs:
+        params["proposals"] = \
+            min(max(1, kwargs["max_proposals"]), 40)
+    if "max_walking_minutes" in kwargs:
+        params["maxwalkingminutes"] = \
+            max(0, kwargs["max_walking_minutes"])
+    if "transport_types" in kwargs:
+        params["transporttypes"] = \
+            ",".join(map(str, kwargs["transport_types"]))
+    if "walking_factor" in kwargs:
+        params["walkingfactor"] = \
+            min(max(1, kwargs["walking_factor"]), 999)
 
     return __process_response(requests.get(uri, params=params))
 
@@ -306,12 +287,9 @@ def get_trip(trip_id, time=None):
     Return a sequence of all stops served by a trip.
     """
     uri = "{0}/Trip/GetTrip/{1}".format(RUTER_API_ENDPOINT, trip_id)
-
-    if not time:
+    if not hasattr(time, "strftime"):
         time = datetime.now(timezone(RUTER_API_TIMEZONE))
-
     params = {"time": time.strftime("%d%m%Y%H%M%S")}
-
     return __process_response(requests.get(uri, params=params))
 
 

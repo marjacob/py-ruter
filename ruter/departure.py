@@ -12,18 +12,18 @@ class Departure(object):
     def __init__(self, json_source):
         json_extensions = json_source["Extensions"]
         json_journey = json_source["MonitoredVehicleJourney"]
-        self.__color = json_extensions["LineColour"]
+        self.__colour = json_extensions["LineColour"]
         self.__destination = json_journey["DestinationName"]
         self.__line_id = json_journey["LineRef"]
         self.__name = json_journey["PublishedLineName"]
         self.__stop_id = json_source["MonitoringRef"]
 
     @property
-    def color(self):
+    def colour(self):
         """
-        Get the color that identifies the line related to the departure.
+        Get the colour that identifies the line related to the departure.
         """
-        return self.__color
+        return self.__colour
 
     @property
     def destination(self):
