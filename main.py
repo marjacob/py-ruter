@@ -16,14 +16,25 @@ class Printer(IObserver):
     def update(self, command):
         name = type(command).__name__
         print(name)
-    def run(self):
-        self.__bus.attach(self)
-        get_stop = GetStopCommand(3010930)
-        get_departures = GetDeparturesCommand(3010930)
-        self.__bus.request(get_stop)
-        self.__bus.request(get_departures)
 
 def main():
+    bus = ApiBus()
+    get_stop = GetStopCommand(3010930)
+    get_departures = GetDeparturesCommand(3010930)
+    p = Printer()
+    
+    bus.attach(p)
+    bus.request(get_stop)
+    bus.request(get_departures)
+    bus.pump()
+
+if __name__ == "__main__":
+    main()
+
+
+
+
+
     # rosenholm = ruter.Stop.from_id(3010930)
     # national = ruter.Stop.from_short_name("roh")
     # departures = national.get_departures()
@@ -35,10 +46,3 @@ def main():
     #     print("{line}: {destination}".format(
     #         line=departure.line_id,
     #         destination=departure.destination))
-
-    p = Printer()
-    p.run()
-    time.sleep(5)
-
-if __name__ == "__main__":
-    main()
