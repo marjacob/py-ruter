@@ -19,7 +19,7 @@ $(venv_activate): requirements.txt
 # Execute the code inside the virtual environment.
 .PHONY: run
 run: $(venv_path) Makefile
-	@$(SHELL) -c "source venv/bin/activate && exec python -tt src/main.py"
+	@$(SHELL) -c "source $(venv_activate) && exec python -tt src/main.py"
 
 # Destroy the virtual environment and cache files.
 .PHONY: clean
