@@ -2,36 +2,29 @@
 # -*- coding: utf-8 -*-
 
 # Standard
-import multiprocessing
+import queue
+import signal
+import threading
 
 # Local
 import interfaces
 
 
 class ApiBus(interfaces.ISubject):
-    def __init__(self):
-        self.__completed_commands = multiprocessing.Queue()
+    def __init__(self, threads=3):
+        self.__completed_commands = queue.Queue()
         self.__enabled = True
         self.__observers = set()
-        self.__pending_commands = multiprocessing.Queue()
-        self.__thread_pool = multiprocessing.Pool(
-            processes=3,
-            initializer=self.__worker_main,
-            initargs=(self.__pending_commands,),
-            maxtasksperchild=None)
-
-    @property
-    def enabled(self):
-        return self.__enabled
-
-    @enabled.setter
-    def enabled(self, value):
-        if not isinstance(value, bool):
-            raise TypeError()
-        else:
-            self.__enabled = value
-
+        self.__pending_commands = queue.Queue()
+        self.__threads = [
+            threading.Thread(target=self.__thread_main, daemon=True)
+            for i in range(0, threads)
+        ]
+    def stop(self):
+        self.__threads.join()
+        self.__enabled = False
     def pump(self):
+        [thread.start() for thread in self.__threads]
         while self.__enabled:
             command = self.__completed_commands.get(True)
             self.notify(command)
@@ -44,8 +37,10 @@ class ApiBus(interfaces.ISubject):
     def notify(self, command):
         for observer in self.__observers:
             observer.update(command)
-    def __worker_main(self, queue):
+    def __thread_main(self):
+        #signal.signal(signal.SIGINT, signal.SIG_IGN)
         while self.__enabled:
-            command = queue.get(True)
+            command = self.__pending_commands.get(True)
             command.execute()
             self.__completed_commands.put(command)
+        print("Process terminating...")

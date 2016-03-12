@@ -1,18 +1,22 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import os
+import signal
+import sys
 import time
 
 from interfaces.observer import IObserver
 from bus import ApiBus
 from get_stop import GetStopCommand
 from get_departures import GetDeparturesCommand
-#import ruter
+
+
+def signal_handler(signum, frame):
+    print("W: custom interrupt handler called.")
 
 
 class Printer(IObserver):
-    def __init__(self):
-        self.__bus = ApiBus()
     def update(self, command):
         name = type(command).__name__
         print(name)
@@ -22,13 +26,14 @@ def main():
     get_stop = GetStopCommand(3010930)
     get_departures = GetDeparturesCommand(3010930)
     p = Printer()
-    
+
     bus.attach(p)
     bus.request(get_stop)
     bus.request(get_departures)
     bus.pump()
 
 if __name__ == "__main__":
+    signal.signal(signal.SIGINT, signal_handler)
     main()
 
 
