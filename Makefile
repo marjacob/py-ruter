@@ -2,7 +2,7 @@ SHELL = /bin/sh
 
 # Virtual environment
 venv_path = .venv
-venv_bin_path = $(venv_path)/bin/
+venv_bin_path = $(venv_path)/bin
 venv_activate = $(venv_bin_path)/activate
 venv_pip = $(venv_bin_path)/pip
 
