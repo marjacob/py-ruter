@@ -9,7 +9,7 @@ import time
 import bus
 
 
-class Main(bus.interfaces.IObserver):
+class Main(bus.IObserver):
     """
     The main class encapsulating the shared variables required for the bus and
     signal handler to interface with each other.

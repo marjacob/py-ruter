@@ -7,10 +7,10 @@ import signal
 import threading
 
 # Local
-from bus import interfaces
+import bus
 
 
-class CommandBus(interfaces.ISubject):
+class CommandBus(bus.ISubject):
     """
     The central bus which forwards incoming API requests and makes the result
     available for consumption by multiple consumers.
@@ -87,7 +87,7 @@ class CommandBus(interfaces.ISubject):
                 self.__completed_commands.put(command)
 
 
-class AbortCommand(interfaces.ICommand):
+class AbortCommand(bus.ICommand):
     """
     A special command which causes an CommandBus to exit as fast as possible,
     but without aborting previously queued requests.

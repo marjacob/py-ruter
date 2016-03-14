@@ -1,11 +1,11 @@
 #!/usr/bin/env python -tt
 # -*- coding: utf-8 -*-
 
-from bus import interfaces
+import bus
 import ruter
 
 
-class GetDeparturesCommand(interfaces.ICommand):
+class GetDeparturesCommand(bus.ICommand):
     def __init__(self, stop_id, time=None):
         self.__result = None
         self.__stop_id = stop_id
