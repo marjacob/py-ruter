@@ -8,33 +8,40 @@ import time
 
 from interfaces.observer import IObserver
 from bus import ApiBus
-from get_stop import GetStopCommand
-from get_departures import GetDeparturesCommand
+
+# Commands
+from bus import AbortCommand
+from get_stop_command import GetStopCommand
+from get_departures_command import GetDeparturesCommand
 
 
-def signal_handler(signum, frame):
-    print("W: custom interrupt handler called.")
+class Main(IObserver):
+    def __init__(self):
+        self.__bus = ApiBus()
+        self.__exit_code = 0
+        signal.signal(signal.SIGINT, self.__signal_handler)
+    def run(self):
+        get_stop = GetStopCommand(3010930)
+        get_departures = GetDeparturesCommand(3010930)
 
+        self.__bus.attach(self)
+        self.__bus.request(get_stop)
+        self.__bus.request(get_departures)
+        self.__bus.pump()
 
-class Printer(IObserver):
+        return self.__exit_code
     def update(self, command):
         name = type(command).__name__
-        print(name)
+        print("\r{0}".format(name))
+        if isinstance(command, AbortCommand):
+            self.__exit_code = command.result
+    def __signal_handler(self, signum, frame):
+        self.__bus.request(AbortCommand(0))
 
-def main():
-    bus = ApiBus()
-    get_stop = GetStopCommand(3010930)
-    get_departures = GetDeparturesCommand(3010930)
-    p = Printer()
-
-    bus.attach(p)
-    bus.request(get_stop)
-    bus.request(get_departures)
-    bus.pump()
 
 if __name__ == "__main__":
-    signal.signal(signal.SIGINT, signal_handler)
-    main()
+    main = Main()
+    sys.exit(main.run())
 
 
 

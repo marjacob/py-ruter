@@ -10,9 +10,9 @@ class GetDeparturesCommand(interfaces.ICommand):
         self.__result = None
         self.__stop_id = stop_id
         self.__time = time
-    @property
-    def result(self):
-        return self.__result
     def execute(self):
         self.__result = ruter.Departure.from_stop_id(self.__stop_id,
                                                      self.__time)
+    @property
+    def result(self):
+        return self.__result
