@@ -50,7 +50,7 @@ class Main(bus.interfaces.IObserver):
         """
         Post an AbortCommand to the pending queue of the bus.
         """
-        self.__bus.request(bus.AbortCommand(0))
+        self.__bus.stop()
 
 
 if __name__ == "__main__":
