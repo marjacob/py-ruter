@@ -14,7 +14,7 @@ python_bin    := $(shell which python3)
 $(venv_path): $(venv_activate)
 $(venv_activate): requirements.txt Makefile
 	@test -d $(venv_path) || virtualenv -p $(python_bin) $(venv_path)
-	@$(venv_pip) install -Ur requirements.txt pip
+	@$(venv_pip) install -Ur requirements.txt pip pylint
 	@touch $(venv_activate)
 
 # Save the list of all currently installed packages.
@@ -22,6 +22,14 @@ $(venv_activate): requirements.txt Makefile
 freeze: $(venv_path)
 	@$(venv_exec) pip freeze > requirements.txt
 	@touch $(venv_activate)
+
+# Generate a pylint report.
+.PHONY: lint
+lint: $(venv_path)
+	@$(venv_exec) pylint \
+		--rcfile=pylintrc \
+		--output-format=text \
+		src
 
 # Execute the code inside the virtual environment.
 .PHONY: run
