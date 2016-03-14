@@ -25,10 +25,12 @@ class Main(bus.interfaces.IObserver):
         """
         get_stop = bus.GetStopCommand(3010930)
         get_departures = bus.GetDeparturesCommand(3010930)
+        get_lines = bus.GetLinesCommand(3010930)
 
         self.__bus.attach(self)
         self.__bus.request(get_stop)
         self.__bus.request(get_departures)
+        self.__bus.request(get_lines)
 
         # Process commands until an AbortCommand is queued.
         self.__bus.pump()
