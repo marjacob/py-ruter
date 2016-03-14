@@ -7,15 +7,14 @@ import signal
 import threading
 
 # Local
-import interfaces
+from bus import interfaces
 
 
-class ApiBus(interfaces.ISubject):
+class CommandBus(interfaces.ISubject):
     """
     The central bus which forwards incoming API requests and makes the result
     available for consumption by multiple consumers.
     """
-
     def __init__(self, threads=3):
         self.__active_threads = 0
         self.__completed_commands = queue.Queue()
@@ -69,12 +68,16 @@ class ApiBus(interfaces.ISubject):
 
 class AbortCommand(interfaces.ICommand):
     """
-    A special command which causes an ApiBus to exit as fast as possible, but
-    without aborting previously queued requests.
+    A special command which causes an CommandBus to exit as fast as possible,
+    but without aborting previously queued requests.
     """
 
     def __init__(self, exit_code):
         self.__exit_code = exit_code
+    def __repr__(self):
+        return "{0}({1})".format(type(self).__name__, self.__exit_code)
+    def __str__(self):
+        return "abort({0})".format(self.__exit_code)
     def execute(self):
         return self.__exit_code
     @property

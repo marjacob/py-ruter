@@ -6,43 +6,57 @@ import signal
 import sys
 import time
 
-from interfaces.observer import IObserver
-from bus import ApiBus
-
-# Commands
-from bus import AbortCommand
-from get_stop_command import GetStopCommand
-from get_departures_command import GetDeparturesCommand
+import bus
 
 
-class Main(IObserver):
+class Main(bus.interfaces.IObserver):
+    """
+    The main class encapsulating the shared variables required for the bus and
+    signal handler to interface with each other.
+    """
     def __init__(self):
-        self.__bus = ApiBus()
+        self.__bus = bus.CommandBus()
         self.__exit_code = 0
         signal.signal(signal.SIGINT, self.__signal_handler)
+
     def run(self):
-        get_stop = GetStopCommand(3010930)
-        get_departures = GetDeparturesCommand(3010930)
+        """
+        Start the bus and begin processing commands.
+        """
+        get_stop = bus.GetStopCommand(3010930)
+        get_departures = bus.GetDeparturesCommand(3010930)
 
         self.__bus.attach(self)
         self.__bus.request(get_stop)
         self.__bus.request(get_departures)
+
+        # Process commands until an AbortCommand is queued.
         self.__bus.pump()
 
         return self.__exit_code
+
     def update(self, command):
+        """
+        Process completed commands.
+        """
         name = type(command).__name__
-        print("\r{0}".format(name))
-        if isinstance(command, AbortCommand):
+        print("\r{0}".format(command))
+        if isinstance(command, bus.AbortCommand):
             self.__exit_code = command.result
+
     def __signal_handler(self, signum, frame):
-        self.__bus.request(AbortCommand(0))
+        """
+        Post an AbortCommand to the pending queue of the bus.
+        """
+        self.__bus.request(bus.AbortCommand(0))
 
 
 if __name__ == "__main__":
+    # Do not accept signals before the appropriate handler has been installed.
+    signal.signal(signal.SIGINT, signal.SIG_DFL)
     main = Main()
+    # Exit with the exit code specified by the AbortCommand.
     sys.exit(main.run())
-
 
 
 
