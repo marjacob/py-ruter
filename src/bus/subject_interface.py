@@ -9,12 +9,12 @@ import abc
 
 
 class ISubject(object, metaclass=abc.ABCMeta):
-	@abc.abstractmethod
-	def attach(self, observer):
-		raise NotImplementedError()
-	@abc.abstractmethod
-	def detach(self, observer):
-		raise NotImplementedError()
-	@abc.abstractmethod
-	def notify(self):
-		raise NotImplementedError()
+    @abc.abstractmethod
+    def attach(self, observer):
+        raise NotImplementedError()
+    @abc.abstractmethod
+    def detach(self, observer):
+        raise NotImplementedError()
+    @abc.abstractmethod
+    def notify(self):
+        raise NotImplementedError()

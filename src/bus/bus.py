@@ -36,7 +36,10 @@ class CommandBus(bus.ISubject):
         """
         Process commands until terminated.
         """
-        [thread.start() for thread in self.__threads]
+        # Start worker threads.
+        for thread in self.__threads:
+            thread.start()
+        # Notify subscribers when a command completes.
         while self.__enabled:
             command = self.__completed_commands.get(True)
             self.notify(command)

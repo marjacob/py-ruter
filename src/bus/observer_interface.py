@@ -9,6 +9,6 @@ import abc
 
 
 class IObserver(object, metaclass=abc.ABCMeta):
-	@abc.abstractmethod
-	def update(self, command):
-		raise NotImplementedError()
+    @abc.abstractmethod
+    def update(self, command):
+        raise NotImplementedError()
