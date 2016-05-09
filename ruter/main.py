@@ -1,76 +1,47 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+
 import os
-import signal
 import sys
+import signal
 import time
 
-import bus
+import ruter.api
+from ruter.status_printer import StatusPrinter
 
 
-class Main(bus.IObserver):
-    """
-    The main class encapsulating the shared variables required for the bus and
-    signal handler to interface with each other.
-    """
+class Main(ruter.api.Customer):
     def __init__(self):
-        self.__bus = bus.CommandBus()
-        self.__exit_code = 0
-        signal.signal(signal.SIGINT, self.__signal_handler)
+        self.__args = sys.argv[1:]
+        self.__status = StatusPrinter()
+        self.__performer = ruter.api.SimplePerformer()
+        self.__performer.attach(self)
+        signal.signal(signal.SIGINT, self.on_signal)
+    
+    def on_signal(self, signum, frame):
+        self.__performer.stop()
 
-    def run(self):
-        """
-        Start the bus and begin processing commands.
-        """
-        get_stop = bus.GetStopCommand(3010930)
-        get_departures = bus.GetDeparturesCommand(3010930)
-        get_lines = bus.GetLinesCommand(3010930)
+    def update(self, sender, task):
+        if isinstance(task, ruter.api.GetStopsRuterTask):
+            i = 0
+            for stop in task.state:
+                i += 1
+                sender.submit(ruter.api.GetStopTask(stop["ID"]))
+                if i > 20:
+                    break
+            sender.stop()
+        print("update: {0}".format(type(task).__name__))
 
-        self.__bus.attach(self)
-        self.__bus.request(get_stop)
-        self.__bus.request(get_departures)
-        self.__bus.request(get_lines)
+    def main(self):
+        start = time.time()
+        self.__status.message("Using Ruter ReisAPI")
+        #get_stops_ruter = ruter.api.GetStopsRuterTask()
+        #self.__performer.submit(get_stops_ruter)
+        #rc = self.__performer.start(16)
+        for i in range(0, 100):
+            self.__performer.submit(ruter.api.SleepTask())
+        self.__performer.stop()
+        rc = self.__performer.start(32)
+        print("Duration: {0}".format(time.time() - start))
+        return rc
 
-        # Process commands until an AbortCommand is queued.
-        self.__bus.pump()
-
-        return self.__exit_code
-
-    def update(self, command):
-        """
-        Process completed commands.
-        """
-        name = type(command).__name__
-        print("\r{0}".format(command))
-        if isinstance(command, bus.AbortCommand):
-            self.__exit_code = command.result
-
-    def __signal_handler(self, signum, frame):
-        """
-        Post an AbortCommand to the pending queue of the bus.
-        """
-        self.__bus.stop()
-
-
-if __name__ == "__main__":
-    # Do not accept signals before the appropriate handler has been installed.
-    signal.signal(signal.SIGINT, signal.SIG_DFL)
-    main = Main()
-    # Exit with the exit code specified by the AbortCommand.
-    sys.exit(main.run())
-
-
-
-
-    # rosenholm = ruter.Stop.from_id(3010930)
-    # national = ruter.Stop.from_short_name("roh")
-    # departures = national.get_departures()
-    # print("{name} in zone {zone} with ID {id}".format(
-    #       name=national.name,
-    #       zone=national.zone,
-    #       id=national.id))
-    # for departure in departures:
-    #     print("{line}: {destination}".format(
-    #         line=departure.line_id,
-    #         destination=departure.destination))
