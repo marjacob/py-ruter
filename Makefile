@@ -21,6 +21,8 @@ venv_pip      := $(venv_exec) pip
 venv_pylint   := $(venv_exec) pylint
 venv_python   := $(venv_exec) python
 
+# Application
+app_root      := ruter
 
 ##### Functions
 ##############################################################################
@@ -45,6 +47,16 @@ $(venv_activate): $(req_floating) Makefile
 	@test -d $(venv_path) || virtualenv -p $(python_bin) $(venv_path)
 	@$(venv-pip-install)
 
+# Destroy the virtual environment and cache files.
+.PHONY: clean
+clean:
+	@$(RM) -r $(venv_path)
+	@find $(app_root) \
+		-name __pycache__ \
+		-type d \
+		-prune \
+		-exec $(RM) -rf {} \;
+
 # Save a list of all currently installed packages with pinned version numbers.
 .PHONY: freeze
 freeze: $(venv_path)
@@ -58,16 +70,10 @@ upgrade: $(venv_path)
 # Generate linting report.
 .PHONY: lint
 lint: $(venv_path)
-	@$(venv_pylint) --rcfile=pylintrc --output-format=text src
+	@$(venv_pylint) --rcfile=pylintrc --output-format=text $(app_root)
 
 # Execute the code inside the virtual environment.
 .PHONY: run
 run: $(venv_path)
-	@$(venv_python) -tt src/main.py
-
-# Destroy the virtual environment and cache files.
-.PHONY: clean
-clean:
-	@$(RM) -rf $(venv_path)
-	@find src -name __pycache__ -type d -prune -exec $(RM) -rf {} \;
+	@$(venv_python) -tt $(app_root)/main.py
 
